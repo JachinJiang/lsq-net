@@ -21,9 +21,12 @@ def quantizer(default_cfg, this_cfg=None):
     return q(**target_cfg)
 
 
+
 def find_modules_to_quantize(model, quan_scheduler):
     replaced_modules = dict()
     for name, module in model.named_modules():
+        # QuanModuleMapping define which types of layers to be quantize
+        # in this project, only t.nn.Conv2d and t.nn.Linear will be quantized
         if type(module) in QuanModuleMapping.keys():
             if name in quan_scheduler.excepts:
                 replaced_modules[name] = QuanModuleMapping[type(module)](
@@ -45,12 +48,14 @@ def find_modules_to_quantize(model, quan_scheduler):
     return replaced_modules
 
 
+# replace the module by recursive
 def replace_module_by_names(model, modules_to_replace):
     def helper(child: t.nn.Module):
         for n, c in child.named_children():
             if type(c) in QuanModuleMapping.keys():
                 for full_name, m in model.named_modules():
                     if c is m:
+                        # if module name is same, the module will be replaced
                         child.add_module(n, modules_to_replace.pop(full_name))
                         break
             else:

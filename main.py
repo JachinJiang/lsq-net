@@ -91,7 +91,7 @@ def main():
         if args.resume.path or args.pre_trained:
             logger.info('>>>>>>>> Epoch -1 (pre-trained model evaluation)')
             top1, top5, _ = process.validate(val_loader, model, criterion,
-                                             start_epoch - 1, monitors, args)
+                                             start_epoch - 1, monitors, args) 
             perf_scoreboard.update(top1, top5, start_epoch - 1)
         for epoch in range(start_epoch, args.epochs):
             logger.info('>>>>>>>> Epoch %3d' % epoch)
@@ -102,14 +102,16 @@ def main():
             tbmonitor.writer.add_scalars('Train_vs_Validation/Loss', {'train': t_loss, 'val': v_loss}, epoch)
             tbmonitor.writer.add_scalars('Train_vs_Validation/Top1', {'train': t_top1, 'val': v_top1}, epoch)
             tbmonitor.writer.add_scalars('Train_vs_Validation/Top5', {'train': t_top5, 'val': v_top5}, epoch)
-
+            for name, param in model.named_parameters():
+                tbmonitor.writer.add_histogram(tag=name+'_grad', values=param.grad, global_step=epoch)
+                tbmonitor.writer.add_histogram(tag=name+'_data', values=param.data, global_step=epoch)
             perf_scoreboard.update(v_top1, v_top5, epoch)
             is_best = perf_scoreboard.is_best(epoch)
             util.save_checkpoint(epoch, args.arch, model, {'top1': v_top1, 'top5': v_top5}, is_best, args.name, log_dir)
 
         logger.info('>>>>>>>> Epoch -1 (final model evaluation)')
-        process.validate(test_loader, model, criterion, -1, monitors, args)
-
+        # final validation will input tbmonitor, to record weights and activations
+        process.validate(test_loader, model, criterion, -1, monitors, args, tbmonitor)
     tbmonitor.writer.close()  # close the TensorBoard
     logger.info('Program completed successfully ... exiting ...')
     logger.info('If you have any questions or suggestions, please visit: github.com/zhutmost/lsq-net')

@@ -15,6 +15,7 @@ class QuanConv2d(t.nn.Conv2d):
         self.quan_a_fn = quan_a_fn
 
         self.weight = t.nn.Parameter(m.weight.detach())
+        # # use m.weight to init lsq.s
         self.quan_w_fn.init_from(m.weight)
         self.bias = None
         if m.bias is not None:

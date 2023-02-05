@@ -5,7 +5,7 @@ import time
 
 import torch as t
 
-from util import AverageMeter
+from util import AverageMeter, GetWeightAndActivation
 
 __all__ = ['train', 'validate', 'PerformanceScoreboard']
 
@@ -78,8 +78,7 @@ def train(train_loader, model, criterion, optimizer, lr_scheduler, epoch, monito
                 top1.avg, top5.avg, losses.avg)
     return top1.avg, top5.avg, losses.avg
 
-
-def validate(data_loader, model, criterion, epoch, monitors, args):
+def validate(data_loader, model, criterion, epoch, monitors, args, tbmonitor=None):
     losses = AverageMeter()
     top1 = AverageMeter()
     top5 = AverageMeter()
@@ -92,12 +91,24 @@ def validate(data_loader, model, criterion, epoch, monitors, args):
     logger.info('Validation: %d samples (%d per mini-batch)', total_sample, batch_size)
 
     model.eval()
+    if tbmonitor != None:
+        layer_ls=[]
+        for name, module in model.named_modules():
+            # there's a empty name, but i don't know why
+            if (name != ""):
+                layer_ls.append(name)
+        model_vis = GetWeightAndActivation(model, layer_ls)
     end_time = time.time()
     for batch_idx, (inputs, targets) in enumerate(data_loader):
         with t.no_grad():
             inputs = inputs.to(args.device.type)
             targets = targets.to(args.device.type)
-
+            if tbmonitor != None:
+                activations, _ = model_vis.get_activations(inputs)
+                # 40 is a interval step num
+                if batch_idx % 40 == 0:
+                    for key in activations.keys():
+                        tbmonitor.writer.add_histogram(tag=key+'_activations', values=t.Tensor(activations[key].cpu().detach()), global_step=batch_idx)
             outputs = model(inputs)
             loss = criterion(outputs, targets)
 
@@ -116,7 +127,10 @@ def validate(data_loader, model, criterion, epoch, monitors, args):
                         'Top5': top5,
                         'BatchTime': batch_time
                     })
-
+    if tbmonitor != None:
+        weights = model_vis.get_weights()
+        for key in weights:
+            tbmonitor.writer.add_histogram(tag=key+'_weights', values=t.Tensor(weights[key].detach().cpu()), global_step=args.epochs)
     logger.info('==> Top1: %.3f    Top5: %.3f    Loss: %.3f\n', top1.avg, top5.avg, losses.avg)
     return top1.avg, top5.avg, losses.avg
 

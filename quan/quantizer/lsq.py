@@ -2,13 +2,13 @@ import torch as t
 
 from .quantizer import Quantizer
 
-
+# 缩放了x的梯度，乘了scale
 def grad_scale(x, scale):
     y = x
     y_grad = x * scale
     return (y - y_grad).detach() + y_grad
 
-
+# 保存了x的梯度
 def round_pass(x):
     y = x.round()
     y_grad = x
@@ -49,10 +49,13 @@ class LsqQuan(Quantizer):
             s_grad_scale = 1.0 / ((self.thd_pos * x.numel()) ** 0.5)
         else:
             s_grad_scale = 1.0 / ((self.thd_pos * x.numel()) ** 0.5)
+        #将s的梯度缩放了，虽然不知道为什么要这么缩放
         s_scale = grad_scale(self.s, s_grad_scale)
+
 
         x = x / s_scale
         x = t.clamp(x, self.thd_neg, self.thd_pos)
+        
         x = round_pass(x)
         x = x * s_scale
         return x
