@@ -89,7 +89,6 @@ def validate(data_loader, model, criterion, epoch, monitors, args, tbmonitor=Non
     steps_per_epoch = math.ceil(total_sample / batch_size)
 
     logger.info('Validation: %d samples (%d per mini-batch)', total_sample, batch_size)
-
     model.eval()
     if tbmonitor != None:
         layer_ls=[]

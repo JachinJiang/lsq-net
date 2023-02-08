@@ -8,7 +8,7 @@ import process
 import quan
 import util
 from model import create_model
-
+from torchsummary import summary
 
 def main():
     script_dir = Path.cwd()
@@ -17,7 +17,7 @@ def main():
     output_dir = script_dir / args.output_dir
     output_dir.mkdir(exist_ok=True)
 
-    log_dir = util.init_logger(args.name, output_dir, script_dir / 'logging.conf')
+    log_dir = util.init_logger(args.name + 'a' + str(args.quan.act.bit) + 'w' + str(args.quan.weight.bit), output_dir, script_dir / 'logging.conf')
     logger = logging.getLogger()
 
     with open(log_dir / "args.yaml", "w") as yaml_file:  # dump experiment config
@@ -55,6 +55,8 @@ def main():
 
     modules_to_replace = quan.find_modules_to_quantize(model, args.quan)
     model = quan.replace_module_by_names(model, modules_to_replace)
+    
+
     tbmonitor.writer.add_graph(model, input_to_model=train_loader.dataset[0][0].unsqueeze(0))
     logger.info('Inserted quantizers into the original model')
 
@@ -62,7 +64,6 @@ def main():
         model = t.nn.DataParallel(model, device_ids=args.device.gpu)
 
     model.to(args.device.type)
-
     start_epoch = 0
     if args.resume.path:
         model, start_epoch, _ = util.load_checkpoint(
@@ -107,7 +108,7 @@ def main():
                 tbmonitor.writer.add_histogram(tag=name+'_data', values=param.data, global_step=epoch)
             perf_scoreboard.update(v_top1, v_top5, epoch)
             is_best = perf_scoreboard.is_best(epoch)
-            util.save_checkpoint(epoch, args.arch, model, {'top1': v_top1, 'top5': v_top5}, is_best, args.name, log_dir)
+            util.save_checkpoint(epoch, args.arch, model, {'top1': v_top1, 'top5': v_top5}, is_best, args.name + 'a' + str(args.quan.act.bit) + 'w' + str(args.quan.weight.bit), log_dir)
 
         logger.info('>>>>>>>> Epoch -1 (final model evaluation)')
         # final validation will input tbmonitor, to record weights and activations
@@ -119,3 +120,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
