@@ -6,7 +6,7 @@ import time
 import torch as t
 
 from util import AverageMeter, GetWeightAndActivation
-
+import numpy as np 
 __all__ = ['train', 'validate', 'PerformanceScoreboard']
 
 logger = logging.getLogger()
@@ -93,8 +93,8 @@ def validate(data_loader, model, criterion, epoch, monitors, args, tbmonitor=Non
     if tbmonitor != None:
         layer_ls=[]
         for name, module in model.named_modules():
-            # there's a empty name, but i don't know why
-            if (name != ""):
+            # select specific layers to visualize
+            if ('module.layer1.0.conv1' in name or 'module.conv1' in name):
                 layer_ls.append(name)
         model_vis = GetWeightAndActivation(model, layer_ls)
     end_time = time.time()
@@ -102,12 +102,13 @@ def validate(data_loader, model, criterion, epoch, monitors, args, tbmonitor=Non
         with t.no_grad():
             inputs = inputs.to(args.device.type)
             targets = targets.to(args.device.type)
-            if tbmonitor != None:
+            # input first batch to get activations
+            if tbmonitor != None and batch_idx == 0:
                 activations, _ = model_vis.get_activations(inputs)
-                # 40 is a interval step num
-                if batch_idx % 40 == 0:
-                    for key in activations.keys():
-                        tbmonitor.writer.add_histogram(tag=key+'_activations', values=t.Tensor(activations[key].cpu().detach()), global_step=batch_idx)
+                # save activations in npz file
+                for key in activations.keys():
+                    np.save('w' + str(args.quan.weight.bit) + 'a' + str(args.quan.act.bit) + '_' + key+'_act.npy',activations[key].cpu().detach()) 
+                    #tbmonitor.writer.add_histogram(tag=key+'_activations', values=t.Tensor(activations[key].cpu().detach()), global_step=batch_idx)
             outputs = model(inputs)
             loss = criterion(outputs, targets)
 
@@ -129,7 +130,9 @@ def validate(data_loader, model, criterion, epoch, monitors, args, tbmonitor=Non
     if tbmonitor != None:
         weights = model_vis.get_weights()
         for key in weights:
-            tbmonitor.writer.add_histogram(tag=key+'_weights', values=t.Tensor(weights[key].detach().cpu()), global_step=args.epochs)
+            # save weights in npz file
+            np.save('w' + str(args.quan.weight.bit) + 'a' + str(args.quan.act.bit) + '_' + key+'_weight.npy',weights[key].cpu().detach()) 
+            #tbmonitor.writer.add_histogram(tag=key+'_weights', values=t.Tensor(weights[key].detach().cpu()), global_step=args.epochs)
     logger.info('==> Top1: %.3f    Top5: %.3f    Loss: %.3f\n', top1.avg, top5.avg, losses.avg)
     return top1.avg, top5.avg, losses.avg
 

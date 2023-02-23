@@ -103,9 +103,9 @@ def main():
             tbmonitor.writer.add_scalars('Train_vs_Validation/Loss', {'train': t_loss, 'val': v_loss}, epoch)
             tbmonitor.writer.add_scalars('Train_vs_Validation/Top1', {'train': t_top1, 'val': v_top1}, epoch)
             tbmonitor.writer.add_scalars('Train_vs_Validation/Top5', {'train': t_top5, 'val': v_top5}, epoch)
-            for name, param in model.named_parameters():
-                tbmonitor.writer.add_histogram(tag=name+'_grad', values=param.grad, global_step=epoch)
-                tbmonitor.writer.add_histogram(tag=name+'_data', values=param.data, global_step=epoch)
+            # for name, param in model.named_parameters():
+            #     tbmonitor.writer.add_histogram(tag=name+'_grad', values=param.grad, global_step=epoch)
+            #     tbmonitor.writer.add_histogram(tag=name+'_data', values=param.data, global_step=epoch)
             perf_scoreboard.update(v_top1, v_top5, epoch)
             is_best = perf_scoreboard.is_best(epoch)
             util.save_checkpoint(epoch, args.arch, model, {'top1': v_top1, 'top5': v_top5}, is_best, args.name + 'a' + str(args.quan.act.bit) + 'w' + str(args.quan.weight.bit), log_dir)

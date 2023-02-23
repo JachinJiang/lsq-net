@@ -56,3 +56,4 @@ Dataset/
 .svn/
 
 *.log
+*.npy
