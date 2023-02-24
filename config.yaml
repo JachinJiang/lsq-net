@@ -23,7 +23,7 @@ device:
   #type: cpu
   type: cuda
   # GPU device IDs to be used. Only valid when device.type is 'cuda'
-  gpu: [0]
+  gpu: [3]
 
 # Dataset loader
 dataloader:
@@ -77,7 +77,7 @@ quan:
     # Quantizer type (choices: lsq)
     mode: lsq
     # Bit width of quantized activation
-    bit: 2
+    bit: 4
     # Each output channel uses its own scaling factor
     per_channel: false
     # Whether to use symmetric quantization

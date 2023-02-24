@@ -8,7 +8,6 @@ import process
 import quan
 import util
 from model import create_model
-from torchsummary import summary
 
 def main():
     script_dir = Path.cwd()
