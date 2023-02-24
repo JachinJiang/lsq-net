@@ -94,7 +94,7 @@ def validate(data_loader, model, criterion, epoch, monitors, args, tbmonitor=Non
         layer_ls=[]
         for name, module in model.named_modules():
             # select specific layers to visualize
-            if ('module.layer1.0.conv1' in name or 'module.conv1' in name):
+            if ('module.layer1.0.conv1' in name or 'module.bn1' in name):
                 layer_ls.append(name)
         model_vis = GetWeightAndActivation(model, layer_ls)
     end_time = time.time()
