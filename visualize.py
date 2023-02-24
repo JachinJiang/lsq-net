@@ -12,7 +12,7 @@ import os
 matplotlib.rcParams['axes.unicode_minus']=False     # 正常显示负号
 
 
-dir_path = 'w4a4'
+dir_path = 'w2a2'
 
 files= os.listdir(dir_path) #得到文件夹下的所有文件名称
 for file in files:
